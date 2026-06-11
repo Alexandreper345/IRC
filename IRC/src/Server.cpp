@@ -17,7 +17,21 @@ void Server::initServerSocket()
 
 void Server::acceptClient()
 {
+	sockaddr_in clientAddr;
+	socklen_t clientLen = sizeof(clientAddr);
 
+	int clientFd = accept(_serverSocket, (sockaddr*)&clientAddr, &clientLen);
+	if (clientFd < 0)
+	{
+		std::cerr << "Error in accept client" << std::endl;
+		return;
+	}
+
+	pollfd p;
+	p.fd = clientFd;
+	p.events = POLLIN;
+	p.revents = 0;
+	_fds.push_back(p);
 }
 
 void Server::bindSocket()
@@ -37,7 +51,6 @@ void Server::listenForConnections()
 	if (listen(_serverSocket, 5) < 0)
 		throw std::runtime_error("failed to listen for connections");
 
-
 	p.fd = _serverSocket;
 	p.events = POLLIN;
 	p.revents = 0;
@@ -47,24 +60,52 @@ void Server::listenForConnections()
 
 void Server::receiveData(int fd)
 {
-
+	char buffer[1024];
+	if (fd < 0)
+	{
+		std::cerr << "Error fd invalid" << std::endl;
+		return;
+	}
+	ssize_t bytes = recv(fd, buffer, sizeof(buffer) - 1, 0);
+	if (bytes == 0)
+	{
+		close(fd);
+		for (size_t i = 0; i < _fds.size(); i++)
+		{
+			if(_fds[i].fd == fd)
+			{
+				_fds.erase(_fds.begin() + i);
+				std::cout << "Client disconnected: " << fd << std::endl;
+				break;
+			}
+		}
+	}
+	else if (bytes < 0)
+	{
+		std::cerr << "recv failed" << std::endl;
+	}
+	else
+	{
+		buffer[bytes] = '\0';
+		std::cout << buffer << std::endl;
+	}
 }
 
 void Server::handlePoll()
 {
 	int ret = poll(_fds.data(), _fds.size(), -1);
+	if (ret < 0)
+		throw std::runtime_error("poll failed");
 	for (size_t i = 0; i < _fds.size(); i++)
 	{
-		if (_fds[i].fd == _serverSocket )
+		if (_fds[i].revents & POLLIN)
 		{
-			acceptClient();
-		}
-		else
-		{
-			receiveData(_fds[i].fd);
+			if (_fds[i].fd == _serverSocket)
+				acceptClient();
+			else
+				receiveData(_fds[i].fd);
 		}
 	}
-	
 }
 
 
