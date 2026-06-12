@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-Server::Server(int port, const std::string& host)
+Server::Server(int port, const std::string& host) : _host(host), _port(port)
 {
 }
 
@@ -50,11 +50,9 @@ void Server::listenForConnections()
 
 	if (listen(_serverSocket, 5) < 0)
 		throw std::runtime_error("failed to listen for connections");
-
 	p.fd = _serverSocket;
 	p.events = POLLIN;
 	p.revents = 0;
-
 	_fds.push_back(p);
 }
 
