@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <poll.h>
 #include <stdexcept>
+#include <fcntl.h>
+#include <cstring>
 
 class Server
 {
@@ -18,6 +20,7 @@ private:
 	std::string _host;
 	int _serverSocket;
 	std::vector<pollfd> _fds;
+	std::map<int, std::string> _clientBuffers;
 
 	void initServerSocket();
 	void acceptClient();

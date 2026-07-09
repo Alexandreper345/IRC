@@ -13,6 +13,9 @@ void Server::initServerSocket()
 	int enable = 1;
 	if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) < 0)
 		throw std::runtime_error("failed to set socket options");
+
+    if (fcntl(_serverSocket, F_SETFL, O_NONBLOCK) < 0)
+        throw std::runtime_error("failed to set non-blocking mode");
 }
 
 void Server::acceptClient()
@@ -27,6 +30,12 @@ void Server::acceptClient()
 		return;
 	}
 
+	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0)
+	{
+		std::cerr << "Error setting client socket to non-blocking" << std::endl;
+		close(clientFd);
+		return;
+	}
 	pollfd p;
 	p.fd = clientFd;
 	p.events = POLLIN;
@@ -80,12 +89,21 @@ void Server::receiveData(int fd)
 	}
 	else if (bytes < 0)
 	{
-		std::cerr << "recv failed" << std::endl;
+		if (errno != EWOULDBLOCK && errno != EAGAIN)
+			std::cerr << "recv failed on fd " << fd << ": " << strerror(errno) << std::endl;
+		
 	}
 	else
 	{
-		buffer[bytes] = '\0';
-		std::cout << buffer << std::endl;
+		_clientBuffers[fd].append(buffer, bytes);
+		size_t pos = _clientBuffers[fd].find('\n');
+		while (pos != std::string::npos)
+		{
+			std::string mensage = _clientBuffers[fd].substr(0, pos);
+			_clientBuffers[fd].erase(0, pos + 1);
+			std::cout << "Comando recebido de fd " << fd << ": " << mensage << std::endl;
+			pos = _clientBuffers[fd].find('\n');
+		}
 	}
 }
 
