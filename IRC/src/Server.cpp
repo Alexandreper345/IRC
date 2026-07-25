@@ -77,6 +77,7 @@ void Server::receiveData(int fd)
 	if (bytes == 0)
 	{
 		close(fd);
+		_clientBuffers.erase(fd);
 		for (size_t i = 0; i < _fds.size(); i++)
 		{
 			if(_fds[i].fd == fd)
@@ -90,7 +91,20 @@ void Server::receiveData(int fd)
 	else if (bytes < 0)
 	{
 		if (errno != EWOULDBLOCK && errno != EAGAIN)
+		{
 			std::cerr << "recv failed on fd " << fd << ": " << strerror(errno) << std::endl;
+			close(fd);
+			_clientBuffers.erase(fd);
+			for (size_t i = 0; i < _fds.size(); i++)
+			{
+				if (_fds[i].fd == fd)
+				{
+					_fds.erase(_fds.begin() + i);
+					break;
+				}
+			}
+			
+		}
 		
 	}
 	else
@@ -114,13 +128,24 @@ void Server::handlePoll()
 		throw std::runtime_error("poll failed");
 	for (size_t i = 0; i < _fds.size(); i++)
 	{
-		if (_fds[i].revents & POLLIN)
-		{
-			if (_fds[i].fd == _serverSocket)
-				acceptClient();
-			else
-				receiveData(_fds[i].fd);
-		}
+    	int fd = _fds[i].fd;
+    	short revents = _fds[i].revents;
+
+    	if (revents & (POLLHUP | POLLERR))
+    	{
+    	    if (fd == _serverSocket)
+    	        throw std::runtime_error("server socket error");
+    	    receiveData(fd);
+    	    continue;
+    	}
+
+    	if (revents & POLLIN)
+    	{
+       		if (fd == _serverSocket)
+            	acceptClient();
+        	else
+            	receiveData(fd);
+   		}
 	}
 }
 
@@ -137,8 +162,8 @@ void Server::run()
 	}
 }
 
-
-
 Server::~Server()
 {
+	for (size_t i = 0; i < _fds.size(); i++)
+		close(_fds[i].fd);
 }
