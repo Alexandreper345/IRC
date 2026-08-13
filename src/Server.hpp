@@ -41,6 +41,31 @@ public:
 	~Server(void);
 
 	void						run(void);
+
+	class ServerSocketError : public std::exception {
+		public:
+			virtual const char	*what() const throw();
+	};
+
+	class SetNonBlockError : public std::exception {
+		public:
+			virtual const char	*what() const throw();
+	};
+
+	class BindPortError : public std::exception {
+		public:
+			virtual const char	*what() const throw();
+	};
+
+	class PollError : public std::exception {
+		public:
+			virtual const char	*what() const throw();
+	};
+	
+	class ListeningError : public std::exception {
+		public:
+			virtual const char	*what() const throw();
+	};
 };
 
 #endif

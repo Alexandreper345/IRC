@@ -1,4 +1,36 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Server.cpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/08/13 13:44:54 by anogueir          #+#    #+#             */
+/*   Updated: 2026/08/13 13:48:01 by anogueir         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Server.hpp"
+
+const char	*Server::ServerSocketError::what() const throw() {
+    return "Server socket error.";
+}
+
+const char	*Server::SetNonBlockError::what() const throw() {
+    return "Could not set socket to NONBLOCK.";
+}
+
+const char	*Server::BindPortError::what() const throw() {
+    return "Could not bind port.";
+}
+
+const char	*Server::PollError::what() const throw() {
+    return "Error running poll().";
+}
+
+const char	*Server::ListeningError::what() const throw() {
+    return "Could not start listening.";
+}
 
 Server::Server(int port, const std::string& password)
     : _port(port), _password(password), _socket(-1) {}
@@ -12,26 +44,17 @@ Server::~Server(void)
 void    Server::initServerSocket(void)
 {
     int enable;
-    
+
     _socket = socket(AF_INET, SOCK_STREAM, 0);
     if (_socket == -1)
-    {
-        std::cerr << "Could not create socket." << std::endl;
-        exit (-1);
-    }
+        throw ServerSocketError();
 
     enable = 1;
     if (setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1)
-    {
-        std::cerr << "Could not set socket options." << std::endl;
-        exit (-1);
-    }
+        throw ServerSocketError();
 
     if (fcntl(_socket, F_SETFL, O_NONBLOCK) == -1)
-    {
-        std::cerr << "Could not set non-blocking mode." << std::endl;
-        exit (-1);
-    }
+        throw SetNonBlockError();
 
     _hint.sin_family = AF_INET;
     _hint.sin_port = htons(_port);
@@ -44,10 +67,7 @@ void    Server::bindSocket(void)
 
     result = bind(_socket, reinterpret_cast<sockaddr *>(&_hint), sizeof(_hint));
     if (result == -1)
-    {
-        std::cerr << "Could not bind to port." << std::endl;
-        exit (-2);
-    }
+        throw BindPortError();
 }
 
 void    Server::listenForConnections(void)
@@ -56,10 +76,7 @@ void    Server::listenForConnections(void)
 
     result = listen(_socket, SOMAXCONN);
     if (result == -1)
-    {
-        std::cerr << "Could not start listening." << std::endl;
-        exit (-3);
-    }
+        throw ListeningError();
 }
 
 void    Server::acceptClient(void)
@@ -82,9 +99,8 @@ void    Server::acceptClient(void)
     }
     if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
     {
-        std::cerr << "Could not set client to non-blocking." << std::endl;
         close(clientFd);
-        return ;
+        throw SetNonBlockError();
     }
     p.fd = clientFd;
     p.events = POLLIN;
@@ -140,15 +156,11 @@ void    Server::handlePoll(void)
         {
             if (errno == EINTR)
                 continue ;
-            std::cerr << "Error running poll()." << std::endl;
-            exit (-4);
+            throw PollError();
         }
 
         if (_fds[0].revents & (POLLERR | POLLHUP | POLLNVAL))
-        {
-            std::cerr << "Server socket error." << std::endl;
-            exit (-4);
-        }
+            throw ServerSocketError();
         if (_fds[0].revents & POLLIN)
             acceptClient();
 
