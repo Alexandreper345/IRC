@@ -14,6 +14,8 @@
 # include <cstring>
 # include <cerrno>
 
+# include "Client.hpp"
+
 # define MAX_CLIENTS 1024
 # define RECV_BUFFER_SIZE 1024
 
@@ -26,6 +28,7 @@ private:
 	sockaddr_in					_hint;
 	std::vector<pollfd> 		_fds;
 	std::map<int, std::string>	_clientBuffers;
+	std::map<int, Client>		_clients;
 
 	void						initServerSocket(void);
 	void						acceptClient(void);
@@ -37,10 +40,14 @@ private:
 
 public:
 	
+	Server(void);
+	Server(const Server&);
+	Server	&operator=(const Server&);
 	Server(int port, const std::string& password);
 	~Server(void);
 
 	void						run(void);
+	void						sendData(int fd);
 
 	class ServerSocketError : public std::exception {
 		public:

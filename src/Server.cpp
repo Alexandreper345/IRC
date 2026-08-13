@@ -1,36 +1,13 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/08/13 13:44:54 by anogueir          #+#    #+#             */
-/*   Updated: 2026/08/13 13:48:01 by anogueir         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Server.hpp"
+#include "Client.hpp"
+#include <netinet/in.h>
+#include <sys/poll.h>
 
-const char	*Server::ServerSocketError::what() const throw() {
-    return "Server socket error.";
-}
+Server::Server(void) {}
 
-const char	*Server::SetNonBlockError::what() const throw() {
-    return "Could not set socket to NONBLOCK.";
-}
+Server::Server(const Server&) {}
 
-const char	*Server::BindPortError::what() const throw() {
-    return "Could not bind port.";
-}
-
-const char	*Server::PollError::what() const throw() {
-    return "Error running poll().";
-}
-
-const char	*Server::ListeningError::what() const throw() {
-    return "Could not start listening.";
-}
+Server	&Server::operator=(const Server&) { return (*this); }
 
 Server::Server(int port, const std::string& password)
     : _port(port), _password(password), _socket(-1) {}
@@ -56,9 +33,11 @@ void    Server::initServerSocket(void)
     if (fcntl(_socket, F_SETFL, O_NONBLOCK) == -1)
         throw SetNonBlockError();
 
+    memset(&_hint, 0, sizeof(_hint));
     _hint.sin_family = AF_INET;
     _hint.sin_port = htons(_port);
     _hint.sin_addr.s_addr = htonl(INADDR_ANY);
+
 }
 
 void    Server::bindSocket(void)
@@ -106,6 +85,7 @@ void    Server::acceptClient(void)
     p.events = POLLIN;
     p.revents = 0;
     _fds.push_back(p);
+    _clients[clientFd] = Client(clientFd);
 }
 
 void    Server::removeClient(int fd)
@@ -176,6 +156,7 @@ void    Server::handlePoll(void)
             }
             if (revents & POLLIN)
                 receiveData(fd);
+
             if (i < _fds.size() && _fds[i].fd == fd)
                 i++;
         }
