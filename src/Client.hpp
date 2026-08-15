@@ -20,12 +20,12 @@ class Client
 		std::set<std::string>	_channels;
 	public:
 		Client(void);
-		Client(const Client&);
-		Client	&operator=(const Client&);
-		Client(int fd);
+		Client(int _fd);
+		Client(const Client& other);
+		Client	&operator=(const Client& other);
 		~Client(void);
 
-		int                     getFd(void);
+		int                     getFd(void) const;
 		const std::string&      getNickname(void) const;
 		const std::string&      getUsername(void) const;
 		const std::string&      getRealname(void) const;
@@ -36,8 +36,8 @@ class Client
 		
 		std::string&            getInBuffer(void);
 		std::string&            getOutBuffer(void);
-		std::set<std::string>   getChannels(void) const;
-		std::string&            getPrefix(void) const;
+		const std::set<std::string>&   getChannels(void) const;
+		std::string            getPrefix(void) const;
 		
 		void					setNickname(const std::string& nickname);
 		void					setUsername(const std::string& username);

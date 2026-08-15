@@ -2,6 +2,7 @@
 #include "Client.hpp"
 #include <netinet/in.h>
 #include <sys/poll.h>
+#include <unistd.h>
 
 Server::Server(void) {}
 
@@ -85,13 +86,12 @@ void    Server::acceptClient(void)
     p.events = POLLIN;
     p.revents = 0;
     _fds.push_back(p);
-    _clients[clientFd] = Client(clientFd);
+    _clients.insert(std::make_pair(clientFd, Client(clientFd)));
 }
 
 void    Server::removeClient(int fd)
 {
-    close(fd);
-    _clientBuffers.erase(fd);
+    _clients.erase(fd);
     for (size_t i = 1; i < _fds.size(); )
     {
         if (_fds[i].fd == fd)
@@ -99,6 +99,7 @@ void    Server::removeClient(int fd)
         else
             i++;
     }
+    close(fd);
 }
 
 void    Server::receiveData(int fd)
@@ -113,7 +114,7 @@ void    Server::receiveData(int fd)
         removeClient(fd);
         return ;
     }
-    _clientBuffers[fd].append(recvBuffer, recvSize);
+    _clients[fd].getInBuffer();
     sentSize = send(fd, recvBuffer, recvSize, 0);
     if (sentSize <= 0)
         removeClient(fd);

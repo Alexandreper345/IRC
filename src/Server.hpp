@@ -27,7 +27,6 @@ private:
 	int							_socket;
 	sockaddr_in					_hint;
 	std::vector<pollfd> 		_fds;
-	std::map<int, std::string>	_clientBuffers;
 	std::map<int, Client>		_clients;
 
 	void						initServerSocket(void);
@@ -47,7 +46,7 @@ public:
 	~Server(void);
 
 	void						run(void);
-	void						sendData(int fd);
+	void						sendData(Client &client);
 
 	class ServerSocketError : public std::exception {
 		public:

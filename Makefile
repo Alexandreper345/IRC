@@ -9,6 +9,8 @@ OBJ_DIR		= obj
 
 SRCS		= main.cpp \
 			  $(SRC_DIR)/Server.cpp
+			  $(SRC_DIR)/Client.cpp
+			  $(SRC_DIR)/serverExceptions.cpp
 
 OBJS		= $(SRCS:%.cpp=$(OBJ_DIR)/%.o)
 

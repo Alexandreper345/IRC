@@ -6,23 +6,51 @@
 /*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/13 18:19:57 by anogueir          #+#    #+#             */
-/*   Updated: 2026/08/13 19:05:39 by anogueir         ###   ########.fr       */
+/*   Updated: 2026/08/15 11:15:38 by anogueir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-Client::Client(void) {}
+Client::Client(void) : _fd(-1), _passOk(false), _registered(false) {}
 
 Client::Client(int fd) : _fd(fd) {}
 
-Client::Client(const Client&) {}
+Client::Client(const Client& other)
+{
+    _fd = other._fd;
+    _nickname = other._nickname;
+    _username = other._username;
+    _realname = other._realname;
+    _hostname = other._hostname;
+    _inbuffer = other._inbuffer;
+    _outbuffer = other._outbuffer;
+    _passOk = other._passOk;
+    _registered = other._registered;
+    _channels = other._channels;
+}
 
-Client	&Client::operator=(const Client&) { return (*this); }
+Client	&Client::operator=(const Client& other)
+{ 
+    if (this != &other)
+    {
+        _fd = other._fd;
+        _nickname = other._nickname;
+        _username = other._username;
+        _realname = other._realname;
+        _hostname = other._hostname;
+        _inbuffer = other._inbuffer;
+        _outbuffer = other._outbuffer;
+        _passOk = other._passOk;
+        _registered = other._registered;
+        _channels = other._channels;
+    }
+    return (*this);
+}
 
 Client::~Client(void) {}
 
-int                     Client::getFd(void)
+int                     Client::getFd(void) const
 {
     return (this->_fd);
 }
@@ -34,7 +62,7 @@ const std::string&      Client::getNickname(void) const
 
 const std::string&      Client::getUsername(void) const
 {
-    return (this->_username)
+    return (this->_username);
 }
 
 const std::string&      Client::getRealname(void) const
@@ -67,12 +95,16 @@ std::string&            Client::getOutBuffer(void)
     return (this->_outbuffer);
 }
 
-std::set<std::string>   Client::getChannels(void) const
+const std::set<std::string>&   Client::getChannels(void) const
 {
     return (this->_channels);
 }
 
-std::string&            Client::getPrefix(void) const {}
+std::string            Client::getPrefix(void) const
+{
+    std::string prefix = ":" + _nickname + "!" + _username + "@" + _hostname;
+    return (prefix);
+}
 
 void					Client::setNickname(const std::string& nickname) {}
 void					Client::setUsername(const std::string& username) {}
