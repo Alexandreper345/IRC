@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Server.hpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/08/17 17:33:12 by anogueir          #+#    #+#             */
+/*   Updated: 2026/08/17 18:22:52 by anogueir         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
@@ -13,11 +25,21 @@
 # include <fcntl.h>
 # include <cstring>
 # include <cerrno>
+# include <signal.h>
+# include <arpa/inet.h>
+# include <cctype>
 
 # include "Client.hpp"
 
 # define MAX_CLIENTS 1024
 # define RECV_BUFFER_SIZE 1024
+
+typedef struct s_message
+{
+	std::string					prefix;
+	std::string					command;
+	std::vector<std::string>	params;
+}				t_message;
 
 class Server
 {
@@ -28,7 +50,8 @@ private:
 	sockaddr_in					_hint;
 	std::vector<pollfd> 		_fds;
 	std::map<int, Client>		_clients;
-
+	t_message					_message;
+	
 	void						initServerSocket(void);
 	void						acceptClient(void);
 	void						bindSocket(void);
@@ -36,6 +59,10 @@ private:
 	void						receiveData(int fd);
 	void						removeClient(int fd);
 	void						handlePoll(void);
+	void    					setupSignals(void);
+	void						parseLine(int fd, std::string line);
+	void    					extractLines(int fd);
+	void						handleCommand(int fd);
 
 public:
 	
@@ -69,6 +96,11 @@ public:
 	};
 	
 	class ListeningError : public std::exception {
+		public:
+			virtual const char	*what() const throw();
+	};
+
+	class SignalSetupError : public std::exception {
 		public:
 			virtual const char	*what() const throw();
 	};
