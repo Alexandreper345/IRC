@@ -85,6 +85,8 @@ void    Server::acceptClient(void)
     p.revents = 0;
     _fds.push_back(p);
     _clients.insert(std::make_pair(clientFd, Client(clientFd)));
+    // gravar o IP/host do peer no `Client`
+    _clients[clientFd].setHostname(inet_ntoa(clientAddr.sin_addr));
 }
 
 void    Server::removeClient(int fd)
@@ -100,6 +102,35 @@ void    Server::removeClient(int fd)
     close(fd);
 }
 
+void    Server::parseLine(int fd, std::string line)
+{
+    std::string command;
+    std::string params;
+
+    command = line.substr(0, line.find(" "));
+    params = line.substr(line.find(" ") + 1);
+    if (command == "NICK")
+        _clients[fd].setNickname(params);
+    else if (command == "USER")
+        _clients[fd].setUsername(params);
+    else if (command == "JOIN")
+        _clients[fd].addChannel(params);
+}
+
+void    Server::extractLines(int fd)
+{
+    std::string line;
+    size_t      pos;
+
+    while (_clients[fd].getInBuffer().find("\r\n") != std::string::npos)
+    {
+        pos = _clients[fd].getInBuffer().find("\r\n");
+        line = _clients[fd].getInBuffer().substr(0, pos);
+        _clients[fd].getInBuffer().erase(0, pos + 2);
+        parseLine(fd, line);
+    }
+}
+
 void    Server::receiveData(int fd)
 {
     char    recvBuffer[RECV_BUFFER_SIZE];
@@ -112,10 +143,8 @@ void    Server::receiveData(int fd)
         removeClient(fd);
         return ;
     }
-    _clients[fd].getInBuffer();
-    sentSize = send(fd, recvBuffer, recvSize, 0);
-    if (sentSize <= 0)
-        removeClient(fd);
+    _clients[fd].getInBuffer().append(recvBuffer, recvSize);
+    extractLines(fd);
 }
 
 void    Server::handlePoll(void)

@@ -14,6 +14,7 @@
 # include <cstring>
 # include <cerrno>
 # include <signal.h>
+# include <arpa/inet.h>
 
 # include "Client.hpp"
 
@@ -38,6 +39,8 @@ private:
 	void						removeClient(int fd);
 	void						handlePoll(void);
 	void    					setupSignals(void);
+	void						parseLine(int fd, std::string line);
+	void    					extractLines(int fd);
 
 public:
 	
