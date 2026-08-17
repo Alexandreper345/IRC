@@ -1,7 +1,19 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.cpp                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/08/17 17:33:01 by anogueir          #+#    #+#             */
+/*   Updated: 2026/08/17 18:24:06 by anogueir         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <iostream>
 #include <cctype>
 #include <cstdlib>
-#include "src/Server.hpp"
+#include "include/Server.hpp"
 
 static bool isPasswordValid(const std::string &password)
 {

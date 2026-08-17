@@ -1,4 +1,16 @@
-#include "Server.hpp"
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Server.cpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/08/17 17:33:06 by anogueir          #+#    #+#             */
+/*   Updated: 2026/08/17 18:49:39 by anogueir         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../../include/Server.hpp"
 
 static volatile sig_atomic_t g_stop = 0;
 
@@ -85,7 +97,6 @@ void    Server::acceptClient(void)
     p.revents = 0;
     _fds.push_back(p);
     _clients.insert(std::make_pair(clientFd, Client(clientFd)));
-    // gravar o IP/host do peer no `Client`
     _clients[clientFd].setHostname(inet_ntoa(clientAddr.sin_addr));
 }
 
@@ -102,19 +113,117 @@ void    Server::removeClient(int fd)
     close(fd);
 }
 
-void    Server::parseLine(int fd, std::string line)
+void Server::handleCommand(int fd)
 {
-    std::string command;
-    std::string params;
+    // NICK/USER/JOIN/KICK/INVITE/TOPIC/MODE/PART/QUIT/PRIVMSG/PASS/PING
+    
+    /* if (_message.command == "NICK")
+    {
+        _clients[fd].setNickname(_message.params[0]);
+    }
+    else if (_message.command == "USER")
+    {
+        _clients[fd].setUsername(_message.params[0]);
+    }
+    else if (_message.command == "JOIN")
+    {
+        _clients[fd].addChannel(_message.params[0]);
+    }
+    else if (_message.command == "KICK")
+    {
+        _clients[fd].kickClient(_message.params[0], _message.params[1]);
+    }
+    else if (_message.command == "INVITE")
+    {
+        _clients[fd].inviteClient(_message.params[0], _message.params[1]);
+    }
+    else if (_message.command == "TOPIC")
+    {
+        _clients[fd].setTopic(_message.params[0]);
+    }
+    else if (_message.command == "MODE")
+    {
+        _clients[fd].setMode(_message.params[0], _message.params[1]);
+    }
+    else if (_message.command == "PART")
+    {
+        _clients[fd].removeChannel(_message.params[0]);
+    }
+    else if (_message.command == "QUIT")
+    {
+        _clients[fd].quit();
+    }
+    else if (_message.command == "PRIVMSG")
+    {
+        _clients[fd].sendMessage(_message.params[0], _message.params[1]);
+    }
+    else if (_message.command == "PASS")
+    {
+        _clients[fd].setPassword(_message.params[0]);
+    }
+    else if (_message.command == "PING")
+    {
+        _clients[fd].sendPong(_message.params[0]);
+    } */
+}
 
-    command = line.substr(0, line.find(" "));
-    params = line.substr(line.find(" ") + 1);
-    if (command == "NICK")
-        _clients[fd].setNickname(params);
-    else if (command == "USER")
-        _clients[fd].setUsername(params);
-    else if (command == "JOIN")
-        _clients[fd].addChannel(params);
+void Server::parseLine(int fd, std::string line)
+{
+    _message.prefix.clear();
+    _message.command.clear();
+    _message.params.clear();
+
+    if (line.empty())
+        return;
+
+    if (line[0] == ':')
+    {
+        std::string::size_type sp = line.find(' ');
+        if (sp == std::string::npos)
+            return;
+        _message.prefix = line.substr(1, sp - 1);
+        line.erase(0, sp + 1);
+        while (!line.empty() && line[0] == ' ')
+            line.erase(0, 1);
+    }
+
+    std::string::size_type pos = line.find(' ');
+    if (pos == std::string::npos)
+        _message.command = line;
+    else
+    {
+        _message.command = line.substr(0, pos);
+        line.erase(0, pos + 1);
+    }
+
+    for (size_t i = 0; i < _message.command.size(); ++i)
+        _message.command[i] = static_cast<char>(
+            std::toupper(static_cast<unsigned char>(_message.command[i])));
+
+    if (pos != std::string::npos)
+    {
+        while (!line.empty() && line[0] == ' ')
+            line.erase(0, 1);
+        while (!line.empty())
+        {
+            if (line[0] == ':')
+            {
+                _message.params.push_back(line.substr(1));
+                break;
+            }
+            pos = line.find(' ');
+            if (pos == std::string::npos)
+            {
+                _message.params.push_back(line);
+                break;
+            }
+            _message.params.push_back(line.substr(0, pos));
+            line.erase(0, pos + 1);
+            while (!line.empty() && line[0] == ' ')
+                line.erase(0, 1);
+        }
+    }
+    handleCommand(fd);
 }
 
 void    Server::extractLines(int fd)
@@ -135,10 +244,9 @@ void    Server::receiveData(int fd)
 {
     char    recvBuffer[RECV_BUFFER_SIZE];
     int     recvSize;
-    int     sentSize;
 
     recvSize = recv(fd, recvBuffer, RECV_BUFFER_SIZE, 0);
-    if (recvSize <= 0)
+    if (recvSize == 0)
     {
         removeClient(fd);
         return ;
