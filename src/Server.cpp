@@ -1,8 +1,4 @@
 #include "Server.hpp"
-#include "Client.hpp"
-#include <netinet/in.h>
-#include <sys/poll.h>
-#include <unistd.h>
 
 Server::Server(void) {}
 
