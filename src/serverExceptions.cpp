@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   serverExceptions.cpp                               :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/08/17 16:40:34 by anogueir          #+#    #+#             */
+/*   Updated: 2026/08/17 16:41:12 by anogueir         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Server.hpp"
 
 const char	*Server::ServerSocketError::what() const throw() {
@@ -18,4 +30,8 @@ const char	*Server::PollError::what() const throw() {
 
 const char	*Server::ListeningError::what() const throw() {
     return "Could not start listening.";
+}
+
+const char	*Server::SignalSetupError::what() const throw() {
+    return "Could not install signal handler.";
 }

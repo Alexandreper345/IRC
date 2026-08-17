@@ -13,6 +13,7 @@
 # include <fcntl.h>
 # include <cstring>
 # include <cerrno>
+# include <signal.h>
 
 # include "Client.hpp"
 
@@ -36,6 +37,7 @@ private:
 	void						receiveData(int fd);
 	void						removeClient(int fd);
 	void						handlePoll(void);
+	void    					setupSignals(void);
 
 public:
 	
@@ -69,6 +71,11 @@ public:
 	};
 	
 	class ListeningError : public std::exception {
+		public:
+			virtual const char	*what() const throw();
+	};
+
+	class SignalSetupError : public std::exception {
 		public:
 			virtual const char	*what() const throw();
 	};

@@ -1,5 +1,7 @@
 #include "Server.hpp"
 
+static volatile sig_atomic_t g_stop = 0;
+
 Server::Server(void) {}
 
 Server::Server(const Server&) {}
@@ -126,7 +128,7 @@ void    Server::handlePoll(void)
     server.revents = 0;
     _fds.push_back(server);
 
-    while (true)
+    while (!g_stop)
     {
         ret = poll(_fds.data(), _fds.size(), -1);
         if (ret < 0)
@@ -160,8 +162,34 @@ void    Server::handlePoll(void)
     }
 }
 
+static void handleStop(int)
+{
+    g_stop = 1;
+}
+
+void    Server::setupSignals(void)
+{
+    struct sigaction sa;
+
+    std::memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = handleStop;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    if (sigaction(SIGINT,  &sa, NULL) == -1)
+        throw SignalSetupError();
+    if (sigaction(SIGTERM, &sa, NULL) == -1)
+        throw SignalSetupError();
+
+    sa.sa_handler = SIG_IGN;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    if (sigaction(SIGPIPE, &sa, NULL) == -1)
+        throw SignalSetupError();
+}
+
 void    Server::run(void)
 {
+    setupSignals();
     initServerSocket();
     bindSocket();
     listenForConnections();
