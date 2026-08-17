@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cctype>
 #include <cstdlib>
-#include "src/Server.hpp"
+#include "include/Server.hpp"
 
 static bool isPasswordValid(const std::string &password)
 {
