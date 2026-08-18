@@ -6,11 +6,11 @@
 /*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 16:40:34 by anogueir          #+#    #+#             */
-/*   Updated: 2026/08/17 16:41:12 by anogueir         ###   ########.fr       */
+/*   Updated: 2026/08/17 20:30:13 by anogueir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
+#include "../../include/Server.hpp"
 
 const char	*Server::ServerSocketError::what() const throw() {
     return "Server socket error.";
