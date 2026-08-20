@@ -113,58 +113,38 @@ void    Server::removeClient(int fd)
     close(fd);
 }
 
-void Server::handleCommand(int fd)
+void    Server::setPollOut(int fd, bool enable)
 {
-    // NICK/USER/JOIN/KICK/INVITE/TOPIC/MODE/PART/QUIT/PRIVMSG/PASS/PING
-    
-    /* if (_message.command == "NICK")
+    for (size_t i = 1; i < _fds.size(); i++)
     {
-        _clients[fd].setNickname(_message.params[0]);
+        if (_fds[i].fd == fd)
+        {
+            if (enable)
+                _fds[i].events = POLLIN | POLLOUT;
+            else
+                _fds[i].events = POLLIN;
+            return ;
+        }
     }
-    else if (_message.command == "USER")
+}
+
+void    Server::sendData(int fd)
+{
+    Client  *client;
+    ssize_t sent;
+
+    client = getClient(fd);
+    if (!client || client->getOutBuffer().empty())
+        return ;
+    sent = send(fd, client->getOutBuffer().c_str(), client->getOutBuffer().size(), 0);
+    if (sent <= 0)
     {
-        _clients[fd].setUsername(_message.params[0]);
+        removeClient(fd);
+        return ;
     }
-    else if (_message.command == "JOIN")
-    {
-        _clients[fd].addChannel(_message.params[0]);
-    }
-    else if (_message.command == "KICK")
-    {
-        _clients[fd].kickClient(_message.params[0], _message.params[1]);
-    }
-    else if (_message.command == "INVITE")
-    {
-        _clients[fd].inviteClient(_message.params[0], _message.params[1]);
-    }
-    else if (_message.command == "TOPIC")
-    {
-        _clients[fd].setTopic(_message.params[0]);
-    }
-    else if (_message.command == "MODE")
-    {
-        _clients[fd].setMode(_message.params[0], _message.params[1]);
-    }
-    else if (_message.command == "PART")
-    {
-        _clients[fd].removeChannel(_message.params[0]);
-    }
-    else if (_message.command == "QUIT")
-    {
-        _clients[fd].quit();
-    }
-    else if (_message.command == "PRIVMSG")
-    {
-        _clients[fd].sendMessage(_message.params[0], _message.params[1]);
-    }
-    else if (_message.command == "PASS")
-    {
-        _clients[fd].setPassword(_message.params[0]);
-    }
-    else if (_message.command == "PING")
-    {
-        _clients[fd].sendPong(_message.params[0]);
-    } */
+    client->getOutBuffer().erase(0, static_cast<size_t>(sent));
+    if (client->getOutBuffer().empty())
+        setPollOut(fd, false);
 }
 
 void Server::parseLine(int fd, std::string line)
@@ -230,28 +210,41 @@ void    Server::extractLines(int fd)
 {
     std::string line;
     size_t      pos;
+    Client      *client;
 
-    while (_clients[fd].getInBuffer().find("\r\n") != std::string::npos)
+    client = getClient(fd);
+    while (client && client->getInBuffer().find("\r\n") != std::string::npos)
     {
-        pos = _clients[fd].getInBuffer().find("\r\n");
-        line = _clients[fd].getInBuffer().substr(0, pos);
-        _clients[fd].getInBuffer().erase(0, pos + 2);
-        parseLine(fd, line);
+        pos = client->getInBuffer().find("\r\n");
+        line = client->getInBuffer().substr(0, pos);
+        client->getInBuffer().erase(0, pos + 2);
+        if (line.size() <= MAX_MSG_SIZE)
+            parseLine(fd, line);
+        client = getClient(fd);
     }
 }
 
 void    Server::receiveData(int fd)
 {
     char    recvBuffer[RECV_BUFFER_SIZE];
-    int     recvSize;
+    ssize_t recvSize;
+    Client  *client;
 
     recvSize = recv(fd, recvBuffer, RECV_BUFFER_SIZE, 0);
-    if (recvSize == 0)
+    if (recvSize <= 0)
     {
         removeClient(fd);
         return ;
     }
-    _clients[fd].getInBuffer().append(recvBuffer, recvSize);
+    client = getClient(fd);
+    if (!client)
+        return ;
+    client->getInBuffer().append(recvBuffer, static_cast<size_t>(recvSize));
+    if (client->getInBuffer().size() > MAX_BUFFER_SIZE)
+    {
+        removeClient(fd);
+        return ;
+    }
     extractLines(fd);
 }
 
@@ -292,7 +285,8 @@ void    Server::handlePoll(void)
             }
             if (revents & POLLIN)
                 receiveData(fd);
-
+            if (i < _fds.size() && _fds[i].fd == fd && (revents & POLLOUT))
+                sendData(fd);
             if (i < _fds.size() && _fds[i].fd == fd)
                 i++;
         }

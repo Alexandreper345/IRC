@@ -2,15 +2,16 @@ NAME		= ircserv
 
 CXX			= c++
 CXXFLAGS	= -Wall -Wextra -Werror -std=c++98
-INCLUDES	= -I./src
+INCLUDES	= -I./include
 
 SRC_DIR		= src
 OBJ_DIR		= obj
 
 SRCS		= main.cpp \
-			  $(SRC_DIR)/Server.cpp
-			  $(SRC_DIR)/Client.cpp
-			  $(SRC_DIR)/serverExceptions.cpp
+			  $(SRC_DIR)/server/Server.cpp \
+			  $(SRC_DIR)/server/ServerCommands.cpp \
+			  $(SRC_DIR)/server/serverExceptions.cpp \
+			  $(SRC_DIR)/client/Client.cpp
 
 OBJS		= $(SRCS:%.cpp=$(OBJ_DIR)/%.o)
 

@@ -14,7 +14,7 @@
 
 Client::Client(void) : _fd(-1), _passOk(false), _registered(false) {}
 
-Client::Client(int fd) : _fd(fd) {}
+Client::Client(int fd) : _fd(fd), _passOk(false), _registered(false) {}
 
 Client::Client(const Client& other)
 {
@@ -106,12 +106,12 @@ std::string            Client::getPrefix(void) const
     return (prefix);
 }
 
-void					Client::setNickname(const std::string& nickname) {}
-void					Client::setUsername(const std::string& username) {}
-void					Client::setRealname(const std::string& realname) {}
-void					Client::setHostname(const std::string& hostname) {}
-void					Client::setPassOk(bool ok) {}
-void					Client::setRegistered(bool registered) {}
-void					Client::addChannel(const std::string& channel) {}
-void					Client::removeChannel(const std::string& channel) {}
+void					Client::setNickname(const std::string& nickname) { (void)nickname; }
+void					Client::setUsername(const std::string& username) { (void)username; }
+void					Client::setRealname(const std::string& realname) { (void)realname; }
+void					Client::setHostname(const std::string& hostname) { (void)hostname; }
+void					Client::setPassOk(bool ok) { (void)ok; }
+void					Client::setRegistered(bool registered) { (void)registered; }
+void					Client::addChannel(const std::string& channel) { (void)channel; }
+void					Client::removeChannel(const std::string& channel) { (void)channel; }
 
