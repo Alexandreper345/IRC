@@ -6,11 +6,11 @@
 /*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/13 18:19:57 by anogueir          #+#    #+#             */
-/*   Updated: 2026/08/15 11:15:38 by anogueir         ###   ########.fr       */
+/*   Updated: 2026/08/20 16:18:20 by anogueir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Client.hpp"
+#include "../../include/Client.hpp"
 
 Client::Client(void) : _fd(-1), _passOk(false), _registered(false) {}
 
