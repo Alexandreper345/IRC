@@ -6,11 +6,11 @@
 /*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/13 18:19:57 by anogueir          #+#    #+#             */
-/*   Updated: 2026/08/17 20:25:31 by anogueir         ###   ########.fr       */
+/*   Updated: 2026/08/15 11:15:38 by anogueir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../include/Client.hpp"
+#include "Client.hpp"
 
 Client::Client(void) : _fd(-1), _passOk(false), _registered(false) {}
 
@@ -106,12 +106,36 @@ std::string            Client::getPrefix(void) const
     return (prefix);
 }
 
-void					Client::setNickname(const std::string& nickname) {}
-void					Client::setUsername(const std::string& username) {}
-void					Client::setRealname(const std::string& realname) {}
-void					Client::setHostname(const std::string& hostname) {}
-void					Client::setPassOk(bool ok) {}
-void					Client::setRegistered(bool registered) {}
-void					Client::addChannel(const std::string& channel) {}
-void					Client::removeChannel(const std::string& channel) {}
+void					Client::setNickname(const std::string& nickname)
+{
+    _nickname = nickname;
+}
+void					Client::setUsername(const std::string& username)
+{
+    _username = username;
+}
+void					Client::setRealname(const std::string& realname)
+{
+    _realname = realname;
+}
+void					Client::setHostname(const std::string& hostname)
+{
+    _hostname = hostname;
+}
+void					Client::setPassOk(bool ok)
+{
+    _passOk = ok;
+}
+void					Client::setRegistered(bool registered)
+{
+    _registered = registered;
+}
+void					Client::addChannel(const std::string& channel)
+{
+    _channels.insert(channel);
+}
+void					Client::removeChannel(const std::string& channel)
+{
+    _channels.erase(channel);
+}
 
