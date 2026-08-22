@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: anogueir <anogueir@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/08/17 17:33:06 by anogueir          #+#    #+#             */
-/*   Updated: 2026/08/17 20:27:10 by anogueir         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "../../include/Server.hpp"
 
 static volatile sig_atomic_t g_stop = 0;
@@ -102,6 +90,7 @@ void    Server::acceptClient(void)
 
 void    Server::removeClient(int fd)
 {
+    partClientFromChannels(fd, "");
     _clients.erase(fd);
     for (size_t i = 1; i < _fds.size(); )
     {
@@ -137,7 +126,12 @@ void    Server::sendData(int fd)
     if (!client || client->getOutBuffer().empty())
         return ;
     sent = send(fd, client->getOutBuffer().c_str(), client->getOutBuffer().size(), 0);
-    if (sent <= 0)
+    if (sent < 0)
+    {
+        setPollOut(fd, true);
+        return ;
+    }
+    if (sent == 0)
     {
         removeClient(fd);
         return ;
@@ -210,14 +204,25 @@ void    Server::extractLines(int fd)
 {
     std::string line;
     size_t      pos;
+    size_t      nlen;
     Client      *client;
 
     client = getClient(fd);
-    while (client && client->getInBuffer().find("\r\n") != std::string::npos)
+    while (client)
     {
         pos = client->getInBuffer().find("\r\n");
+        nlen = 2;
+        if (pos == std::string::npos)
+        {
+            pos = client->getInBuffer().find('\n');
+            nlen = 1;
+        }
+        if (pos == std::string::npos)
+            break ;
         line = client->getInBuffer().substr(0, pos);
-        client->getInBuffer().erase(0, pos + 2);
+        if (!line.empty() && line[line.size() - 1] == '\r')
+            line.erase(line.size() - 1);
+        client->getInBuffer().erase(0, pos + nlen);
         if (line.size() <= MAX_MSG_SIZE)
             parseLine(fd, line);
         client = getClient(fd);
@@ -231,11 +236,13 @@ void    Server::receiveData(int fd)
     Client  *client;
 
     recvSize = recv(fd, recvBuffer, RECV_BUFFER_SIZE, 0);
-    if (recvSize <= 0)
+    if (recvSize == 0)
     {
         removeClient(fd);
         return ;
     }
+    if (recvSize < 0)
+        return ;
     client = getClient(fd);
     if (!client)
         return ;
@@ -278,17 +285,30 @@ void    Server::handlePoll(void)
             int     fd = _fds[i].fd;
             short   revents = _fds[i].revents;
 
-            if (revents & (POLLHUP | POLLERR | POLLNVAL))
-            {
-                removeClient(fd);
-                continue ;
-            }
             if (revents & POLLIN)
                 receiveData(fd);
-            if (i < _fds.size() && _fds[i].fd == fd && (revents & POLLOUT))
-                sendData(fd);
             if (i < _fds.size() && _fds[i].fd == fd)
+            {
+                Client  *client;
+
+                client = getClient(fd);
+                if (client && !client->getOutBuffer().empty()
+                    && (revents & (POLLOUT | POLLIN)))
+                    sendData(fd);
+            }
+            if (i < _fds.size() && _fds[i].fd == fd)
+            {
+                Client  *client;
+
+                client = getClient(fd);
+                if ((revents & (POLLHUP | POLLERR | POLLNVAL))
+                    && (!client || client->getOutBuffer().empty()))
+                {
+                    removeClient(fd);
+                    continue ;
+                }
                 i++;
+            }
         }
     }
 }
