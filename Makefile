@@ -11,7 +11,8 @@ SRCS		= main.cpp \
 			  $(SRC_DIR)/server/Server.cpp \
 			  $(SRC_DIR)/server/ServerCommands.cpp \
 			  $(SRC_DIR)/server/serverExceptions.cpp \
-			  $(SRC_DIR)/client/Client.cpp
+			  $(SRC_DIR)/client/Client.cpp \
+			  $(SRC_DIR)/channel/Channel.cpp
 
 OBJS		= $(SRCS:%.cpp=$(OBJ_DIR)/%.o)
 

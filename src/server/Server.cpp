@@ -102,6 +102,7 @@ void    Server::acceptClient(void)
 
 void    Server::removeClient(int fd)
 {
+    partClientFromChannels(fd, "");
     _clients.erase(fd);
     for (size_t i = 1; i < _fds.size(); )
     {
