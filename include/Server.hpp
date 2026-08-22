@@ -31,6 +31,7 @@
 # include <cctype>
 
 # include "Client.hpp"
+# include "Channel.hpp"
 
 # define MAX_CLIENTS 1024
 # define RECV_BUFFER_SIZE 1024
@@ -54,6 +55,7 @@ private:
 	sockaddr_in					_hint;
 	std::vector<pollfd> 		_fds;
 	std::map<int, Client>		_clients;
+	std::map<std::string, Channel>	_channels;
 	t_message					_message;
 
 	void						initServerSocket(void);
@@ -74,12 +76,15 @@ private:
 									const std::string& args, const std::string& text);
 	void						setPollOut(int fd, bool enable);
 	Client*						getClient(int fd);
+	Channel*					getChannel(const std::string& name);
 	int							findClientByNick(const std::string& nick);
 	bool						isValidNick(const std::string& nick);
 	bool						isValidChannel(const std::string& name);
 	bool						isInChannel(int fd, const std::string& channel);
 	void						broadcastToChannel(const std::string& channel,
 									const std::string& message, int exceptFd);
+	void						partClientFromChannels(int fd, const std::string& quitMsg);
+	void						removeClientFromChannel(int fd, const std::string& name);
 	void						tryRegister(int fd);
 	void						sendNames(int fd, const std::string& channel);
 	std::vector<std::string>	splitComma(const std::string& s);
